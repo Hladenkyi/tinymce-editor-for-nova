@@ -3,6 +3,8 @@
 namespace Hladenkyi\Editor\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Laravel\Nova\Http\Requests\NovaRequest;
 
 class TinyUploadController extends Controller
@@ -16,7 +18,7 @@ class TinyUploadController extends Controller
             });
 
         $path = $request->file('file')->storePublicly($field->storagePath, $field->disk);
-        $url = \Storage::url($path);
+        $url = Storage::disk($field->disk)->url($path);
 
         return response()->json(['location' => asset($url)]);
     }
@@ -30,8 +32,9 @@ class TinyUploadController extends Controller
                 abort(404);
             });
 
-        $path = \Str::afterLast($request->url, 'storage/');
-        \Storage::disk($field->disk)->delete($path);
+        $path = Str::afterLast($request->url, $field->disk === 'public' ? 'storage/' : 'storage/' . $field->disk . '/');
+
+        Storage::disk($field->disk)->delete($path);
         return response()->noContent();
     }
 }
